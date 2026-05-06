@@ -1,0 +1,42 @@
+name: Publish Docker image
+on:
+  push:
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Checkout vllm-omni repository
+        uses: actions/checkout@v6
+        with:
+          repository: vllm-project/vllm-omni
+          ref: main
+          path: vllm-omni
+      - name: Remove fa3-fwd dependency
+        run: |
+          sed -i '/fa3-fwd/d' ./vllm-omni/requirements/cuda.txt
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: ./vllm-omni
+          file: "{context}/docker/Dockerfile.cuda"
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
