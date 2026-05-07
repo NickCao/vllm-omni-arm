@@ -28,9 +28,6 @@ jobs:
           repository: vllm-project/vllm-omni
           ref: main
           path: vllm-omni
-      - name: Remove fa3-fwd dependency
-        run: |
-          sed -i '/fa3-fwd/d' ./vllm-omni/requirements/cuda.txt
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Build and push Docker image
